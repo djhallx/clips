@@ -9,7 +9,6 @@ import { switchMap } from 'rxjs';
 import { ClipService } from 'src/app/services/clip.service';
 import { Router } from '@angular/router';
 import { FfmpegService } from 'src/app/services/ffmpeg.service';
-import { SafeURLPipe } from '../pipes/safe-url.pipe';
 
 
 @Component({

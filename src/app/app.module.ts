@@ -26,7 +26,7 @@ import { ReactiveFormsModule } from '@angular/forms';
     NavComponent,
     HomeComponent,
     AboutComponent,
-    UploadComponent,
+    //UploadComponent,
     ClipComponent,
     NotFoundComponent
   ],

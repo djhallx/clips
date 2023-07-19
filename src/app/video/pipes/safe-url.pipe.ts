@@ -11,5 +11,4 @@ export class SafeURLPipe implements PipeTransform {
   transform(value: string) {
     return this.santizer.bypassSecurityTrustUrl(value);
   }
-
 }
