@@ -6,6 +6,7 @@ import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 })
 export class FfmpegService {
 
+  isRunning = false
   isReady = false
   private ffmpeg
 
@@ -29,11 +30,10 @@ export class FfmpegService {
    }
 
 
-
-
-
    async getScreenshots(file: File): Promise<string[]> {
     console.log('getScreenshots()...')    
+
+    this.isRunning = true
 
     const data = await fetchFile(file)
     this.ffmpeg.FS('writeFile', file.name, data)
@@ -80,6 +80,20 @@ export class FfmpegService {
 
         
     })
+
+    this.isRunning = false
+
     return screenshots
+  }
+
+  async blobFromURL(url: string) {
+
+    // Modern browsers are smart enough to retrieve the blob data from 
+    // a URL that points to the user's memory.
+    const response = await fetch(url)
+
+    const blob = await response.blob()
+
+    return blob
   }
 }

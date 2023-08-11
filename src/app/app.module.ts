@@ -18,6 +18,8 @@ import { ClipComponent } from './clip/clip.component';
 import { NotFoundComponent } from './not-found/not-found.component';
 import { SharedModule } from './shared/shared.module';
 import { ReactiveFormsModule } from '@angular/forms';
+import { ClipsListComponent } from './clips-list/clips-list.component';
+import { FbTimestampPipe } from './pipes/fb-timestamp.pipe';
 
 
 @NgModule({
@@ -28,7 +30,9 @@ import { ReactiveFormsModule } from '@angular/forms';
     AboutComponent,
     //UploadComponent,
     ClipComponent,
-    NotFoundComponent
+    NotFoundComponent,
+    ClipsListComponent,
+    FbTimestampPipe
   ],
   imports: [
     BrowserModule,

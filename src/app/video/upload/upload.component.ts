@@ -2,13 +2,14 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { AngularFireStorage, AngularFireUploadTask } from '@angular/fire/compat/storage'
 import { v4 as uuid } from 'uuid'
-import { last } from 'rxjs';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import firebase from 'firebase/compat/app'
 import { switchMap } from 'rxjs';
 import { ClipService } from 'src/app/services/clip.service';
 import { Router } from '@angular/router';
 import { FfmpegService } from 'src/app/services/ffmpeg.service';
+import { combineLatest, forkJoin } from 'rxjs';
+
 
 
 @Component({
@@ -30,11 +31,11 @@ export class UploadComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    console.log('upload.component.ts - ngOnDestroy(): Begin...')
+
       // '?' the task property may not exist. 
       // If it does, invoke cancel. If it does not, do nothing.
     this.task?.cancel();
-
-    console.log("Upload cancelled.")
   }
 
   isDragover = false
@@ -55,7 +56,11 @@ export class UploadComponent implements OnDestroy {
   task?: AngularFireUploadTask
 
   screenshots: string[] = []
-  
+  selectedScreenshot = ''
+
+  screenshotTask?: AngularFireUploadTask
+
+
 
   title = new FormControl('', [
     Validators.required,
@@ -69,6 +74,11 @@ export class UploadComponent implements OnDestroy {
 
   async storeFile($event: Event) {
     console.log("storeFile()...")
+
+    if (this.ffmpegService.isRunning) {
+      console.log("An upload is already in progress. Please wait and try again later.")
+      return
+    }
 
     this.isDragover = false
 
@@ -93,6 +103,8 @@ export class UploadComponent implements OnDestroy {
     console.log('uploadComponent.ts{}.storeFile() calling getSceenshots()')
     this.screenshots = await this.ffmpegService.getScreenshots(this.file)
 
+    this.selectedScreenshot = this.screenshots[0]
+
 
     this.nextStep = true;
     this.title.setValue(
@@ -104,7 +116,8 @@ export class UploadComponent implements OnDestroy {
 
 
   
-  uploadFile() {
+  async uploadFile() {
+    console.log('upload.component.ts - uploadFile(): Begin...')
     this.uploadForm.disable()
 
     this.showAlert = true;
@@ -119,25 +132,76 @@ export class UploadComponent implements OnDestroy {
     const clipPath = `clips/${clipFilename}.mp4`
 
     
+    console.log('===================================================')
+    console.log('===================================================')
+    console.log('===================================================')
+    console.log('===================================================')
 
+
+
+    /**
+     * Get the selected screenshot and upload it to the server.
+     */
+    const screenshotBlob = await this.ffmpegService.blobFromURL(this.selectedScreenshot)
+    console.log('screenshotBlob: ' + screenshotBlob)
+    const screenshotPath = `screenshots/${clipFilename}.png`
+    console.log('screenshotPath: ' + screenshotPath)
+    
+    
+    this.screenshotTask = this.storeage.upload(
+      screenshotPath, screenshotBlob
+    )
+
+
+    /**
+     * Uplaod the video clip.
+     */
     this.task = this.storeage.upload(clipPath, this.file)
     const clipRef = this.storeage.ref(clipPath)
 
-    this.task.percentageChanges().subscribe(progress => {
-      this.percentage = progress as number / 100
+    const screenshotRef = this.storeage.ref(screenshotPath)
+
+
+    // The percentageChanges observable is wrapped in order to 
+    // reflect the changes on both the screenshot upload and 
+    // the clip upload.
+
+    combineLatest([
+        this.task.percentageChanges(),
+        this.screenshotTask.percentageChanges()
+    ]).subscribe((progress) => {
+      const [clipProgress, screenshotProgress] = progress
+
+      if (!clipProgress || !screenshotProgress) {
+        return
+      }
+
+      const total = clipProgress + screenshotProgress;
+      this.percentage = total as number / 200
     })
 
-    this.task.snapshotChanges().pipe(
-        last(),
-        switchMap(() => clipRef.getDownloadURL())
+
+    //-----------------------------------------------------------
+
+    forkJoin([
+      this.task.snapshotChanges(),
+      this.screenshotTask.snapshotChanges()
+    ]).pipe(
+        switchMap(() => forkJoin([
+          clipRef.getDownloadURL(),
+          screenshotRef.getDownloadURL()
+        ]))
       ).subscribe({
-      next: async (url) => {
+      next: async (urls) => {
+        const [clipURL, screenshotURL] = urls
         const clip = {
           uid: this.user?.uid as string,
           displayName: this.user?.displayName as string,
           title: this.title.value as string,
           fileName: `${clipFilename}.mp4`,
-          url, 
+          url : clipURL, 
+          screenshotURL: screenshotURL,
+          screenshotFilename: `${clipFilename}.png`,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }
 
