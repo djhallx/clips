@@ -12,7 +12,7 @@ import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
 import { AngularFireStorageModule } from '@angular/fire/compat/storage'
 import { HomeComponent } from './home/home.component';
 import { AboutComponent } from './about/about.component';
-import { VideoModule } from './video/video.module';
+//import { VideoModule } from './video/video.module';
 //import { UploadComponent } from './video/upload/upload.component';
 import { ClipComponent } from './clip/clip.component';
 import { NotFoundComponent } from './not-found/not-found.component';
@@ -28,7 +28,7 @@ import { FbTimestampPipe } from './pipes/fb-timestamp.pipe';
     NavComponent,
     HomeComponent,
     AboutComponent,
-    //UploadComponent,
+    //UploadComponent,      // Dynamically loaded
     ClipComponent,
     NotFoundComponent,
     ClipsListComponent,
@@ -41,7 +41,7 @@ import { FbTimestampPipe } from './pipes/fb-timestamp.pipe';
     AngularFireAuthModule,
     AngularFirestoreModule,
     AngularFireStorageModule,
-    VideoModule,
+    //VideoModule,          // Dynamically loaded
     SharedModule,
     ReactiveFormsModule,
     AppRoutingModule          // This one has to be last because it registers the '**' (Not Found) route.
